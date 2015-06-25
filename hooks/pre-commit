@@ -14,7 +14,7 @@
 # Redirect output to stderr.
 exec 1>&2
 
-PUPPETLINT_FLAGS=${PUPPETLINT_FLAGS:-'--no-autoloader_layout-check --no-80chars-check'}
+PUPPETLINT_FLAGS=${PUPPETLINT_FLAGS:-'--no-autoloader_layout-check --no-80chars-check --no-class_inherits_from_params_class-check'}
 TMPDIR=${TMPDIR:-'/tmp'}
 TMPFILE=$(mktemp "${TMPDIR}"/tmp.XXXXXXXXXX)
 TMPR10K=$(mktemp -d "${TMPDIR}"/tmp.XXXXXXXXXX)
