@@ -64,6 +64,13 @@ do
     if [[ $? -ne 0 ]]; then
         echo "Unable to checkout ${file}"
         STATUS=2
+    elif [[ ${file} == *"asf-authorization-template"* ]]; then
+        echo "Testing authz validity"
+        /usr/bin/svnauthz-validate $TMPFILE
+        STATUS=$?
+        if [[ $STATUS -ne 0 ]]; then
+          echo "asf-authorization-template change is invalid, rejecting"
+        fi
     else
         case $extension in
             pp)
