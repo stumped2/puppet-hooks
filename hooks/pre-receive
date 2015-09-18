@@ -27,9 +27,7 @@ which erb >/dev/null 2>&1 || exit 1
 while read oldrev newrev refname; do
   git archive $newrev | tar x -C ${TMPFILE}
   if [[ $oldrev == "0000000000000000000000000000000000000000" ]]; then
-    echo "setting newrev"
     newrev=`git rev-parse --abbrev-ref HEAD`
-    echo "setting oldrev"
     oldrev=`git show-branch | grep '\*' | grep -v "$newrev" | head -n1 | sed 's/.*\[\(.*\)\].*/\1/' | sed 's/[\^~].*//'`
   fi
 
@@ -45,7 +43,7 @@ while read oldrev newrev refname; do
       echo "Testing authz validity"
       /usr/bin/svnauthz-validate $to_check
       if [[ $? -ne 0 ]]; then
-        echo "asf-authorization-template change is invalid, rejecting"
+        echo "asf-authorization-template change is invalid"
         STATUS=2
       fi 
     else
@@ -114,4 +112,9 @@ while read oldrev newrev refname; do
     fi
   done
 done
+
+if [[ $STATUS -ne 0]]; then
+  echo "rejecting push"
+fi
+
 exit $STATUS
