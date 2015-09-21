@@ -92,7 +92,11 @@ while read oldrev newrev refname; do
           ;;
 
         json)
-          echo "it's json!"
+          ruby -rjson -e "JSON.parse(File.open('${to_check}').read)" >/dev/null 2>&1
+          if [[ $? -ne 0 ]]; then
+            echo "JSON syntax error in ${file}" >&2
+            STATUS=2
+          fi
           ;;
       esac
 
