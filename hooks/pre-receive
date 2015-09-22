@@ -25,7 +25,7 @@ which puppet-lint >/dev/null 2>&1 || exit 1
 which erb >/dev/null 2>&1 || exit 1
 
 while read oldrev newrev refname; do
-  git archive $newrev | tar x -C ${TMPFILE}
+  git archive $newrev | tar x -C ${TMPFILE} >/dev/null 2>&1
   if [[ $oldrev == "0000000000000000000000000000000000000000" ]]; then
     newrev=`git rev-parse --abbrev-ref HEAD`
     oldrev=`git show-branch | grep '\*' | grep -v "$newrev" | head -n1 | sed 's/.*\[\(.*\)\].*/\1/' | sed 's/[\^~].*//'`
