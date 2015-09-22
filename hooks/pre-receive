@@ -117,7 +117,7 @@ while read oldrev newrev refname; do
   done
 done
 
-if [[ $STATUS -ne 0]]; then
+if [[ $STATUS -ne 0 ]]; then
   echo "rejecting push"
 fi
 
