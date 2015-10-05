@@ -37,8 +37,94 @@ validate_ref() {
                 echo "Deleting branch $branch"
                 return
             else # updating
-                echo "Going to be doing validation here then"
-                return
+                git archive $newrev | tar x -C ${TMPFILE} >/dev/null 2>&1
+                if [[ $oldrev == "0000000000000000000000000000000000000000" ]]; then
+                    newrev=`git rev-parse --abbrev-ref HEAD`
+                    oldrev=`git show-branch | grep '\*' | grep -v "$newrev" | head -n1 | sed 's/.*\[\(.*\)\].*/\1/' | sed 's/[\^~].*//'`
+                fi
+
+                declare -a FILES
+                FILES=$(git diff --name-only --diff-filter=ACM $oldrev $newrev)
+
+                echo $FILES
+                for file in ${FILES[@]}; do
+                    to_check="$TMPFILE/$file"
+                    extension="${file##*.}"
+
+                    if [ ${file} == *"asf-authorization-template"* ]; then
+                        echo "Testing authz validity"
+                        svnauthz-validate $to_check
+                        if [ $? -ne 0 ]; then
+                            echo "asf-authorization-template change is invalid"
+                            STATUS=2
+                        fi
+                    else
+                        case $extension in
+                            pp)
+                                echo "Testing puppet syntax on $to_check ..."
+                                # Remove import lines while parsing
+                                # http://projects.puppetlabs.com/issues/9670#note-14
+                                sed -i -e '/^import / d' $to_check >/dev/null 2>&1
+                                # Puppet syntax check
+                                puppet parser validate $to_check >/dev/null 2>&1
+                                if [ $? -ne 0 ]; then
+                                    echo "Puppet syntax error in ${file}. Run 'puppet parser validate ${file}'" >&2
+                                    STATUS=2
+                                fi
+
+                                # puppet-lint check
+                                echo "Testing puppet linting style on $to_check ..."
+                                puppet-lint $PUPPETLINT_FLAGS --log-format "${file}:%{linenumber} %{KIND} - %{message}" $to_check 2> /dev/null
+                                if [ $? -ne 0 ]; then
+                                    echo "Puppet-lint failure in ${file}" >&2
+                                    STATUS=2
+                                fi
+                                ;;
+
+                            erb)
+                                echo "Testing erb syntax on $to_check ..."
+                                sed -i 's/^%/<%= "%" %>/' "${to_check}"
+                                erb -x -T - "${to_check}" | ruby -c >/dev/null 2>&1
+                                if [ $? -ne 0 ]; then
+                                    echo "ERB syntax error in ${file}" >&2
+                                    STATUS=2
+                                fi
+                                ;;
+
+                            yml|yaml)
+                                echo "Testing yaml syntax on $to_check ..."
+                                ruby -ryaml -e "YAML.parse(File.open('${to_check}'))" >/dev/null 2>&1
+                                if [ $? -ne 0 ]; then
+                                    echo "YAML syntax error in ${file}" >&2
+                                    STATUS=2
+                                fi
+                                ;;
+
+                            json)
+                                echo "Testing json syntax on $to_check ..."
+                                ruby -rjson -e "JSON.parse(File.open('${to_check}').read)" >/dev/null 2>&1
+                                if [ $? -ne 0 ]; then
+                                    echo "JSON syntax error in ${file}" >&2
+                                    STATUS=2
+                                fi
+                                ;;
+                        esac
+
+                        # r10k Puppetfile syntax
+                        which r10k >/dev/null 2>&1
+                        if [ $? -eq 0 ]; then
+                            if [ "$(basename $file)" == 'Puppetfile' ]; then
+                                cp "${to_check}" "${TMPR10K}/Puppetfile"
+                                ( cd "${TMPR10K}" && r10k puppetfile check ) 2> "${to_check}"
+                                if [ $? -ne 0 ]; then
+                                    echo "r10k syntax error in ${file}" >&2
+                                    sed "s,${TMPR10K}/Puppetfile,${file}," >&2 < "${to_check}"
+                                    STATUS=2
+                                fi
+                            fi
+                        fi
+                    fi
+                done
             fi
             ;;
         esac
@@ -46,10 +132,10 @@ validate_ref() {
 
 binary_validation || exit 1
 
-#while read oldrev newrev refname
-#do
-#    validate_ref $oldrev $newrev $refname
-#done
+while read oldrev newrev refname
+do
+    validate_ref $oldrev $newrev $refname
+done
 
 if [ $STATUS -ne 0 ]; then
     echo "rejecting push"
