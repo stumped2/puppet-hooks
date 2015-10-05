@@ -46,7 +46,6 @@ validate_ref() {
                 declare -a FILES
                 FILES=$(git diff --name-only --diff-filter=ACM $oldrev $newrev)
 
-                echo $FILES
                 for file in ${FILES[@]}; do
                     to_check="$TMPFILE/$file"
                     extension="${file##*.}"
