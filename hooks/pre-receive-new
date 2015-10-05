@@ -55,20 +55,20 @@ validate_ref() {
                     else
                         case $extension in
                             pp)
-                                echo "Testing puppet syntax on $to_check ..."
-                                echo "Testing puppet linting style on $to_check ..."
+                                echo "Testing puppet syntax on $file ..."
+                                echo "Testing puppet linting style on $file ..."
                                 ;;
 
                             erb)
-                                echo "Testing erb syntax on $to_check ..."
+                                echo "Testing erb syntax on $file ..."
                                 ;;
 
                             yml|yaml)
-                                echo "Testing yaml syntax on $to_check ..."
+                                echo "Testing yaml syntax on $file ..."
                                 ;;
 
                             json)
-                                echo "Testing json syntax on $to_check ..."
+                                echo "Testing json syntax on $file ..."
                                 ;;
                         esac
                     fi
