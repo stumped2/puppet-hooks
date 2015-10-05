@@ -1,0 +1,57 @@
+#!/bin/bash
+
+export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:$PATH
+
+PUPPETLINT_FLAGS=${PUPPETLINT_FLAGS:-'--no-autoloader_layout-check --no-80chars-check --no-class_inherits_from_params_class-check'}
+TMPDIR=${TMPDIR:-'/tmp'}
+TMPFILE=$(mktemp -d "${TMPDIR}"/tmp.XXXXXXXXXX)
+TMPR10K=$(mktemp -d "${TMPDIR}"/tmp.XXXXXXXXXX)
+STATUS=0
+
+# Register exit trap for removing temporary files
+trap 'rm -rf $TMPFILE $TMPR10K' EXIT INT HUP
+
+binary_validation() {
+
+    # Check for existence of binaries before trying to use them
+    for binary in ruby puppet puppet-lint erb svnauthz-validate; do
+        which $binary >/dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "$binary not found!"
+            return 1
+        fi
+    done
+}
+
+validate_ref() {
+    oldrev=$(git rev-parse $1)
+    newrev=$(git rev-parse $2)
+    refname="$3"
+
+    case "$refname" in
+        refs/heads/*)
+            branch=$(expr "$refname" : "refs/heads/\(.*\)")
+            topicbranch=$(expr "$branch" : "\(.*/.*\)")
+            topicuser=$(expr "$branch" : "\(.*\)/.*")
+            if [ 0 -ne $(expr "$newrev" : "0*$") ]; then # deleting
+                echo "Deleting branch $branch"
+                return
+            else # updating
+                echo "Going to be doing validation here then"
+                return
+            fi
+            ;;
+        esac
+}
+
+binary_validation || exit 1
+
+#while read oldrev newrev refname
+#do
+#    validate_ref $oldrev $newrev $refname
+#done
+
+if [ $STATUS -ne 0 ]; then
+    echo "rejecting push"
+fi
+exit $STATUS
