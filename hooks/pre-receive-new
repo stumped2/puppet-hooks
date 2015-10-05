@@ -45,7 +45,6 @@ validate_ref() {
                     file="$(git diff --name-only $commit^..$commit)"
                     FILES="$FILES $file"
                 done
-                echo $FILES
                 for file in ${FILES[@]}; do
                     to_check="$TMPFILE/$file"
                     extension="${file##*.}"
