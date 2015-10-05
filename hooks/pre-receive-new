@@ -64,6 +64,7 @@ validate_ref() {
                                 if [ $? -ne 0 ]; then
                                     echo "Puppet syntax error in ${file}. Run 'puppet parser validate ${file}'" >&2
                                     STATUS=2
+                                    return
                                 fi
 
                                 echo "Testing puppet linting style on $file ..."
@@ -71,6 +72,7 @@ validate_ref() {
                                 puppet-lint $PUPPETLINT_FLAGS --log-format "${file}:%{linenumber} %{KIND} - %{message}" $to_check 2> /dev/null
                                 if [ $? -ne 0 ]; then
                                     STATUS=2
+                                    return
                                 fi
                                 ;;
 
@@ -88,6 +90,7 @@ validate_ref() {
                                 if [ $? -ne 0 ]; then
                                     echo "ERB syntax error in ${file}" >&2
                                     STATUS=2
+                                    return
                                 fi
                                 ;;
 
@@ -98,6 +101,7 @@ validate_ref() {
                                 if [ $? -ne 0 ]; then
                                     echo "YAML syntax error in ${file}" >&2
                                     STATUS=2
+                                    return
                                 fi
                                 ;;
 
@@ -107,6 +111,7 @@ validate_ref() {
                                 if [ $? -ne 0 ]; then
                                     echo "JSON syntax error in ${file}" >&2
                                     STATUS=2
+                                    return
                                 fi
                                 ;;
                         esac
